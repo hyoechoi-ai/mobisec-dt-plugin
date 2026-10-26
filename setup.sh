@@ -1,7 +1,8 @@
 #!/bin/bash
 # MobiSec DT Plugin - Team Setup Script
-# Configures Claude Code with eBay HubGPT + MCP Gateway connections
+# Connects eBay MCP Gateway backends for Claude Code
 # Run once per machine: ./setup.sh
+# Prerequisite: Claude Code already configured with eBay HubGPT
 
 set -e
 
@@ -21,40 +22,7 @@ if ! command -v claude &> /dev/null; then
 fi
 echo -e "${GREEN}✓ Claude Code found${NC}"
 
-# 2. Configure HubGPT gateway in ~/.claude/settings.json
-SETTINGS_FILE="$HOME/.claude/settings.json"
-mkdir -p "$HOME/.claude"
-
-if [ ! -f "$SETTINGS_FILE" ]; then
-    echo "{}" > "$SETTINGS_FILE"
-fi
-
-# Merge HubGPT settings using Python
-python3 -I - <<'PYEOF'
-import json, sys, os
-
-path = os.path.expanduser("~/.claude/settings.json")
-with open(path) as f:
-    cfg = json.load(f)
-
-cfg.setdefault("apiKeyHelper", "npx @ebay/claude-code-token@latest get_token")
-cfg.setdefault("env", {}).update({
-    "ANTHROPIC_BASE_URL": "https://platformgateway2.vip.ebay.com/hubgptgatewaysvc/v1/anthropic",
-    "ANTHROPIC_MODEL": "claude-sonnet-4-6",
-    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-4-6",
-    "ANTHROPIC_SMALL_FAST_MODEL": "claude-sonnet-4-6",
-    "CLAUDE_CODE_API_KEY_HELPER_TTL_MS": "360000000",
-    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "1",
-    "DISABLE_TELEMETRY": "1"
-})
-
-with open(path, "w") as f:
-    json.dump(cfg, f, indent=2)
-
-print("✓ HubGPT gateway configured")
-PYEOF
-
-# 3. Add eBay MCP backends
+# 2. Add eBay MCP backends
 echo ""
 echo -e "${YELLOW}Connecting eBay MCP backends...${NC}"
 echo "(You may be prompted to authenticate with your eBay SSO account)"
